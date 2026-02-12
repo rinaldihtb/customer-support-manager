@@ -47,8 +47,8 @@ The workspace is configured to run all services (API, Web, and DB) with a single
 Copy the example environment file to the each backend and frontend to set defaults for the app and database:
 
 ```bash
-cp backend/.env.example .env
-cp frontend/.env.example .env
+cp backend/.env.example ./backend/.env
+cp frontend/.env.example ./frontend/.env
 
 ```
 
