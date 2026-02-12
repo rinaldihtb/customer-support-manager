@@ -1,0 +1,31 @@
+{
+  "name": "customer-support-api",
+  "version": "1.0.0",
+  "description": "An API for managing customer support tickets and messages.",
+  "main": "server.js",
+  "author": "Muhamamd Rinaldi Hutabarat",
+  "license": "MIT",
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@toon-format/toon": "^2.1.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.2.4",
+    "express": "^5.2.1",
+    "lodash": "^4.17.23",
+    "pg": "^8.18.0",
+    "winston": "^3.19.0"
+  },
+  "devDependencies": {
+    "node-pg-migrate": "^8.0.4",
+    "nodemon": "^3.1.11"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "start:worker": "node worker.js",
+    "dev": "nodemon server.js",
+    "dev:worker": "nodemon worker.js",
+    "migrate:create": "node-pg-migrate create --mjs",
+    "migrate:up": "node-pg-migrate up",
+    "migrate:down": "node-pg-migrate down"
+  }
+}
