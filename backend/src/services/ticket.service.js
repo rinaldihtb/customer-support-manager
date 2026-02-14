@@ -1,9 +1,9 @@
-const { Worker } = require('worker_threads')
-const path = require('path')
 const logger = require('../config/logger')
 const ticketRepository = require('../repositories/ticket.repository')
 const ticketMessageRepository = require('../repositories/ticketMessage.repository')
 const _ = require('lodash')
+const { Queue } = require('bullmq')
+const redis = require('../config/redis')
 
 const createTicket = async (data) => {
     try {
@@ -20,27 +20,26 @@ const createTicket = async (data) => {
 
         const ticket = await ticketRepository.createTicket(data)
 
-        // Proceed LLM worker
-        const worker = new Worker(path.resolve(__dirname, '../workers/llm.worker.js'), {
-            workerData: { ticket }
-        })
-
-        worker.on('message', (result) => {
-            logger.info("Clasifying worker is finished", [
-                { message: result }
-            ])
-        })
-
-        worker.on('error', (error) => {
-            logger.error("Clasifying worker error", {
-                message: error
+        // Insert into Queue.
+        try {
+            const ticketQueue = new Queue('ticket-tasks', {
+                connection: redis, defaultJobOptions: {
+                    attempts: 999,
+                    backoff: {
+                        type: 'exponential',
+                        delay: process.env.REDIS_JOB_FAILED_DELAY * 1000,
+                    },
+                    removeOnComplete: true,
+                    removeOnFail: {
+                        age: 10,
+                    }
+                }
             })
-        });
-
-        worker.on('exit', (code) => {
-            if (code !== 0) logger.error(`Worker stopped with exit code ${code}`);
-        });
-
+            ticketQueue.add('ai-clasify-ticket', { ticketId: ticket.id })
+        } catch (error) {
+            logger.error("redis error", error)
+            throw new Error(error)
+        }
 
         return ticket
     } catch (error) {
@@ -49,7 +48,7 @@ const createTicket = async (data) => {
     }
 }
 
-const listTicket = async (params = { pagination: { page: 1, limit: 10 } }) => {
+const listTicket = async (params = { order: { created_at: "ASC" }, pagination: { page: 1, limit: 10 } }) => {
     try {
         const countTickets = await ticketRepository.countTickets();
         return {
@@ -69,7 +68,7 @@ const listTicket = async (params = { pagination: { page: 1, limit: 10 } }) => {
 const getTicket = async (id) => {
     try {
         const ticket = await ticketRepository.getTicket(id)
-        const ticketMessages = await ticketMessageRepository.getTicketMessages({ ticketId : id })
+        const ticketMessages = await ticketMessageRepository.getTicketMessages({ ticketId: id })
         ticket.messages = ticketMessages
 
         return ticket;

@@ -5,13 +5,17 @@ services:
       target: backend
     container_name: customer-support-api
     command: yarn run dev
+    env_file:
+      - backend/.env
     ports:
       - "8100:8100"
     depends_on:
+      - redis-service
       - postgres-service
     volumes:
       - ./backend:/app/backend
       - /backend/app/node_modules
+  
   customer-support-app: 
     build: 
       context: .
@@ -25,6 +29,7 @@ services:
     volumes:
       - ./frontend:/app/frontend
       - /app/frontend/node_modules
+
   postgres-service: 
     image: postgres:15
     container_name: postgres-service
@@ -36,5 +41,20 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  redis-service:
+    image: redis:7-alpine
+    container_name: redis-service
+    restart: always
+    command: >
+      redis-server 
+      --appendonly yes 
+      --appendfsync everysec 
+      --save 60 1
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
 volumes:
   postgres_data:
+  redis_data:

@@ -3,6 +3,7 @@ const logger = require('./src/config/logger');
 const app = require('./src/app');
 const pool = require('./src/config/db');
 const runMigration = require('./src/config/migration');
+const runWorkers = require('./src/workers');
 
 const PORT = process.env.PORT || 3000;
 
@@ -11,7 +12,8 @@ async function startServer() {
         try {
             const res = await pool.query('SELECT NOW()');
         } catch (error) {
-            throw new Error("Failed to connect to the database", err.message)
+            logger.info("Failed to connect to the database", error)
+            throw new Error(error)
         }
 
         // Running the migration script
@@ -21,12 +23,19 @@ async function startServer() {
             throw new Error(error)
         }
 
+        // Init the workers
+        try {
+            await runWorkers();
+        } catch (error) {
+            throw new Error(error)
+        }
+
+
         app.listen(PORT, () => {
             logger.info(`Server running on port ${PORT}`);
         });
-    } catch (err) {
-        logger.error(err.message);
-        process.exit(1);
+    } catch (error) {
+        logger.error("Server failed to run", error);
     }
 }
 

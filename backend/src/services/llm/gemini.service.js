@@ -1,12 +1,9 @@
-const llmClient = require("../config/llm")
+const llmClient = require("../../config/llm")
 const _ = require("lodash");
-const logger = require("../config/logger");
-const ticketMessageRepositories = require('../repositories/ticketMessage.repository')
-const ticketRepositories = require('../repositories/ticket.repository')
+const logger = require("../../config/logger");
 
 const clasifyTicket = async (ticket) => {
-    console.log("tikcet", ticket)
-    const model = await llmClient.getGenerativeModel(
+    const model = await llmClient.geminiClient.getGenerativeModel(
         {
             model: "gemini-3-flash-preview",
             generationConfig: {
@@ -41,21 +38,8 @@ const clasifyTicket = async (ticket) => {
     const prompt = `Analyze this support ticket and classify it: ${JSON.stringify(_.pick(ticket, ['subject', 'description']))}`;
     try {
         const result = await model.generateContent(prompt);
-        const modelResponse = JSON.parse(result.response.text());
-
-        // const modelResponse = {
-        //     urgency_level: "HIGH",
-        //     sentiment_score: 9,
-        //     category: "BILLING",
-        //     response: "Terbaik"
-        // }
-        const { response } = modelResponse
-
-        await ticketRepositories.updateTicket(_.merge(ticket, modelResponse))
-        await ticketMessageRepositories.createTicketMessage({ticket_id: ticket.id, message: response})
-        return true;
+        return JSON.parse(result.response.text());
     } catch (error) {
-        logger.error("Classification failed:", error);
         throw new Error('Classification failed', error)
     }
 }

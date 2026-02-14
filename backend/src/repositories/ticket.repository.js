@@ -43,8 +43,20 @@ const getTickets = async (config = { filters: {}, sorts: {}, pagination: { limit
     const sorts = config.sorts;
     let query = "SELECT * from tickets "
     if (sorts.created_at) {
-        query += ` ORDER BY created_at ${sorts.created_at} `
+        query += ` ORDER BY 
+            CASE status
+                WHEN 'OPEN'         THEN 1
+                ELSE 2
+            END ASC,
+            CASE urgency_level
+                WHEN 'HIGH'         THEN 1
+                WHEN 'MEDIUM'       THEN 2
+                WHEN 'LOW'          THEN 3
+                ELSE 4
+            END ASC,
+        created_at ${sorts.created_at} `
     }
+
     if (config.pagination) {
         query += ` LIMIT $1 OFFSET $2`
     }
