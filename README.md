@@ -1,4 +1,4 @@
-# Customer Support Manager
+# Support Ticket System
 
 A unified full-stack solution featuring a **Clean Architecture Node.js API** and a **Next.js Frontend**, fully orchestrated via Docker.
 
